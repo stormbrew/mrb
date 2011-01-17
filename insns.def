@@ -529,9 +529,12 @@ splatarray
 (VALUE ary)
 (VALUE obj)
 {
-    VALUE tmp = rb_check_convert_type(ary, T_ARRAY, "Array", "to_a");
+    VALUE tmp = rb_check_convert_type(ary, T_ARRAY, "Array", "to_ary");
     if (NIL_P(tmp)) {
-	tmp = rb_ary_new3(1, ary);
+        tmp = rb_check_convert_type(ary, T_ARRAY, "Array", "to_a");
+        if (NIL_P(tmp)) {
+	        tmp = rb_ary_new3(1, ary);
+        }
     }
     obj = tmp;
 }
@@ -809,7 +812,7 @@ defined
 
 	    args[0] = obj; args[1] = Qfalse;
 	    r = rb_check_funcall(v, rb_intern("respond_to_missing?"), 2, args);
-	    if (r != Qundef && RTEST(r)) 
+	    if (r != Qundef && RTEST(r))
 		expr_type = "method";
 	}
 	break;

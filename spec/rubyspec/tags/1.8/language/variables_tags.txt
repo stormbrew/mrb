@@ -3,7 +3,6 @@ fails:Basic assignment allows the assignment of the rhs to the lhs using the rhs
 fails:Basic assignment allows the assignment of the rhs to the lhs using the lhs splat operator
 fails:Basic assignment allows the assignment of rhs to the lhs using the lhs and rhs splat operators simultaneously
 fails:Assignment using expansion succeeds without conversion
-fails:Basic multiple assignment with a splatted single RHS value calls #to_ary on an object
 fails:Basic multiple assignment with a splatted single RHS value calls #to_a on a String
 fails:Assigning multiple values doen't call #to_ary on RHS arg when the corresponding LHS var is a splat
 fails:Multiple assignments with splats * on the lhs has to be applied to the last parameter
