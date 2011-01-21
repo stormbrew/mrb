@@ -702,7 +702,7 @@ static void token_info_pop(struct parser_params*, const char *token);
 %type <node> bv_decls opt_bv_decl bvar
 %type <node> lambda f_larglist lambda_body
 %type <node> brace_block cmd_brace_block do_block lhs none fitem
-%type <node> mlhs mlhs_head mlhs_basic mlhs_item mlhs_node mlhs_post mlhs_inner
+%type <node> mlhs mlhs_head mlhs_basic mlhs_item mlhs_node mlhs_inner
 %type <id>   fsym variable sym symbol operation operation2 operation3
 %type <id>   cname fname op f_rest_arg f_block_arg opt_f_block_arg f_norm_arg f_bad_arg
 /*%%%*/
@@ -1200,7 +1200,14 @@ stmt		: keyword_alias fitem {lex_state = EXPR_FNAME;} fitem
 		| lhs '=' mrhs
 		    {
 		    /*%%%*/
-			value_expr($3);
+		    /* splat assignment has slightly different rules from
+		     * splat arguments (a = *[] => nil, a = *[1] => 1)
+		     */
+            if (nd_type($3) == NODE_SPLAT) {
+                $3->nd_spflag = Qtrue;
+            }
+
+            value_expr($3);
 			$$ = node_assign($1, $3);
 		    /*%
 			$$ = dispatch2(assign, $1, $3);
@@ -1209,15 +1216,28 @@ stmt		: keyword_alias fitem {lex_state = EXPR_FNAME;} fitem
 		| mlhs '=' arg_value
 		    {
 		    /*%%%*/
-			$1->nd_value = $3;
+		    /* In order to ensure that we always know the
+		     * difference between '= a', '= a,b', '= [a]', and '= [a,b]
+		     * we make sure that all forms of MASGN have a list
+		     * as their right hand value by doing this.
+		     */
+			$1->nd_value = NEW_LIST($3);
 			$$ = $1;
 		    /*%
-			$$ = dispatch2(massign, $1, $3);
+			$$ = dispatch2(massign, $1, NEW_LIST($3));
 		    %*/
 		    }
 		| mlhs '=' mrhs
 		    {
 		    /*%%%*/
+		    /* if lhs is an array of one make it act more
+		     * like a single-assign.
+		     */
+		    if ($1->nd_head && nd_type($1->nd_head) == NODE_ARRAY &&
+		        nd_type($3) != NODE_ARRAY) {
+                $3 = NEW_LIST($3);
+		    }
+
 			$1->nd_value = $3;
 			$$ = $1;
 		    /*%
@@ -1496,27 +1516,10 @@ mlhs_basic	: mlhs_head
 			$$ = mlhs_add_star($1, $3);
 		    %*/
 		    }
-		| mlhs_head tSTAR mlhs_node ',' mlhs_post
-		    {
-		    /*%%%*/
-			$$ = NEW_MASGN($1, NEW_POSTARG($3,$5));
-		    /*%
-			$1 = mlhs_add_star($1, $3);
-			$$ = mlhs_add($1, $5);
-		    %*/
-		    }
 		| mlhs_head tSTAR
 		    {
 		    /*%%%*/
 			$$ = NEW_MASGN($1, -1);
-		    /*%
-			$$ = mlhs_add_star($1, Qnil);
-		    %*/
-		    }
-		| mlhs_head tSTAR ',' mlhs_post
-		    {
-		    /*%%%*/
-			$$ = NEW_MASGN($1, NEW_POSTARG(-1, $4));
 		    /*%
 			$$ = mlhs_add_star($1, Qnil);
 		    %*/
@@ -1529,26 +1532,10 @@ mlhs_basic	: mlhs_head
 			$$ = mlhs_add_star(mlhs_new(), $2);
 		    %*/
 		    }
-		| tSTAR mlhs_node ',' mlhs_post
-		    {
-		    /*%%%*/
-			$$ = NEW_MASGN(0, NEW_POSTARG($2,$4));
-		    /*%
-			$$ = mlhs_add_star(mlhs_new(), $2);
-		    %*/
-		    }
 		| tSTAR
 		    {
 		    /*%%%*/
 			$$ = NEW_MASGN(0, -1);
-		    /*%
-			$$ = mlhs_add_star(mlhs_new(), Qnil);
-		    %*/
-		    }
-		| tSTAR ',' mlhs_post
-		    {
-		    /*%%%*/
-			$$ = NEW_MASGN(0, NEW_POSTARG(-1, $3));
 		    /*%
 			$$ = mlhs_add_star(mlhs_new(), Qnil);
 		    %*/
@@ -1580,24 +1567,6 @@ mlhs_head	: mlhs_item ','
 			$$ = list_append($1, $2);
 		    /*%
 			$$ = mlhs_add($1, $2);
-		    %*/
-		    }
-		;
-
-mlhs_post	: mlhs_item
-		    {
-		    /*%%%*/
-			$$ = NEW_LIST($1);
-		    /*%
-			$$ = mlhs_add(mlhs_new(), $1);
-		    %*/
-		    }
-		| mlhs_post ',' mlhs_item
-		    {
-		    /*%%%*/
-			$$ = list_append($1, $3);
-		    /*%
-			$$ = mlhs_add($1, $3);
 		    %*/
 		    }
 		;
@@ -2509,7 +2478,7 @@ args		: arg_value
 		| tSTAR arg_value
 		    {
 		    /*%%%*/
-			$$ = NEW_SPLAT($2);
+			$$ = NEW_SPLAT($2, Qfalse);
 		    /*%
 			$$ = arg_add_star(arg_new(), $2);
 		    %*/
@@ -2576,7 +2545,7 @@ mrhs		: args ',' arg_value
 		| tSTAR arg_value
 		    {
 		    /*%%%*/
-			$$ = NEW_SPLAT($2);
+			$$ = NEW_SPLAT($2, Qfalse);
 		    /*%
 			$$ = mrhs_add_star(mrhs_new(), $2);
 		    %*/

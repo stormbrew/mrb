@@ -1589,13 +1589,28 @@ static inline void
 vm_expandarray(rb_control_frame_t *cfp, VALUE ary, rb_num_t num, int flag)
 {
     int is_splat = flag & 0x01;
-    rb_num_t space_size = num + is_splat;
+    int push_ary = flag & 0x08;
+    rb_num_t space_size = num + is_splat + (push_ary? 1 : 0);
     VALUE *base = cfp->sp, *ptr;
     volatile VALUE tmp_ary;
     rb_num_t len;
+    VALUE tmp;
 
     if (TYPE(ary) != T_ARRAY) {
-	ary = rb_ary_to_ary(ary);
+	ary = rb_ary_new3(1, ary);
+    }
+
+    /* if we're expanding an array with only a single array in it,
+     * and we're expanding it into something other than a splat,
+     * the inner array is the one to expand (see comments in parse.y
+     * around "mlhs = arg_value" for why we can assume that's what
+     * this means)
+     */
+     if ((num > 0 || !is_splat) && RARRAY_LEN(ary) == 1) {
+        tmp = rb_check_convert_type(RARRAY_PTR(ary)[0], T_ARRAY, "Array", "to_ary");
+        if (!NIL_P(tmp)) {
+            ary = tmp;
+        }
     }
 
     cfp->sp += space_size;
@@ -1637,12 +1652,15 @@ vm_expandarray(rb_control_frame_t *cfp, VALUE ary, rb_num_t num, int flag)
 	}
 	if (is_splat) {
 	    if (num > len) {
-		*bptr = rb_ary_new();
+		*bptr-- = rb_ary_new();
 	    }
 	    else {
-		*bptr = rb_ary_new4(len - num, ptr + num);
+		*bptr-- = rb_ary_new4(len - num, ptr + num);
 	    }
 	}
+    	if (push_ary) {
+            *bptr-- = ary;
+    	}
     }
 }
 

@@ -346,6 +346,8 @@ typedef struct RNode {
 
 #define nd_visi  u2.argc
 
+#define nd_spflag u2.value
+
 #define NEW_NODE(t,a0,a1,a2) rb_node_newnode((t),(VALUE)(a0),(VALUE)(a1),(VALUE)(a2))
 
 #define NEW_DEFN(i,a,d,p) NEW_NODE(NODE_DEFN,0,i,NEW_SCOPE(a,d))
@@ -421,7 +423,7 @@ typedef struct RNode {
 #define NEW_POSTARG(i,v) NEW_NODE(NODE_POSTARG,i,v,0)
 #define NEW_ARGSCAT(a,b) NEW_NODE(NODE_ARGSCAT,a,b,0)
 #define NEW_ARGSPUSH(a,b) NEW_NODE(NODE_ARGSPUSH,a,b,0)
-#define NEW_SPLAT(a) NEW_NODE(NODE_SPLAT,a,0,0)
+#define NEW_SPLAT(a,f) NEW_NODE(NODE_SPLAT,a,f,0)
 #define NEW_TO_ARY(a) NEW_NODE(NODE_TO_ARY,a,0,0)
 #define NEW_BLOCK_ARG(v) NEW_NODE(NODE_BLOCK_ARG,v,0,local_cnt(v))
 #define NEW_BLOCK_PASS(b) NEW_NODE(NODE_BLOCK_PASS,0,b,0)

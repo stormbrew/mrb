@@ -479,12 +479,13 @@ duparray
      flag: 0x01 - ç≈å„ÇîzóÒÇ…
      flag: 0x02 - postarg óp
      flag: 0x04 - reverse?
+     flag: 0x08 - re-push original array onto stack
  */
 DEFINE_INSN
 expandarray
 (rb_num_t num, rb_num_t flag)
 (..., VALUE ary)
-(...) // inc += num - 1 + (flag & 1 ? 1 : 0);
+(...) // inc += num - 1 + (flag & 1 ? 1 : 0) + (flag & 8 ? 1 : 0);
 {
     vm_expandarray(GET_CFP(), ary, num, (int)flag);
 }
@@ -529,14 +530,32 @@ splatarray
 (VALUE ary)
 (VALUE obj)
 {
-    VALUE tmp = rb_check_convert_type(ary, T_ARRAY, "Array", "to_ary");
-    if (NIL_P(tmp)) {
-        tmp = rb_check_convert_type(ary, T_ARRAY, "Array", "to_a");
+    VALUE tmp;
+
+    if (NIL_P(ary)) {
+        obj = ary;
+    } else {
+        tmp = rb_check_convert_type(ary, T_ARRAY, "Array", "to_ary");
         if (NIL_P(tmp)) {
-	        tmp = rb_ary_new3(1, ary);
+            tmp = rb_check_convert_type(ary, T_ARRAY, "Array", "to_a");
+            if (NIL_P(tmp)) {
+    	        tmp = rb_ary_new3(1, ary);
+            }
         }
+
+        /* in the context of an assignment, we need to do a couple of
+         * special cases. If the splat is of an empty array, the result
+         * is nil. If it's of an array with one item, the result is the item.
+         */
+        if (flag == Qtrue) {
+            if (RARRAY_LEN(tmp) == 0) {
+                tmp = Qnil;
+            } else if (RARRAY_LEN(tmp) == 1) {
+                tmp = RARRAY_PTR(tmp)[0];
+            }
+        }
+        obj = tmp;
     }
-    obj = tmp;
 }
 
 /**

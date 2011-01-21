@@ -2497,8 +2497,9 @@ compile_massign(rb_iseq_t *iseq, LINK_ANCHOR *ret, NODE *node, int poped)
     NODE *splatn = node->nd_args;
     NODE *lhsn = node->nd_head;
     int lhs_splat = (splatn && (VALUE)splatn != (VALUE)-1) ? 1 : 0;
+    VALUE expand_flags = INT2FIX(lhs_splat | (poped? 0 : 0x8));
 
-    if (!poped || splatn || !compile_massign_opt(iseq, ret, rhsn, lhsn)) {
+//    if (!poped || splatn || !compile_massign_opt(iseq, ret, rhsn, lhsn)) {
 	int llen = 0;
 	DECL_ANCHOR(lhsseq);
 
@@ -2512,12 +2513,8 @@ compile_massign(rb_iseq_t *iseq, LINK_ANCHOR *ret, NODE *node, int poped)
 
 	COMPILE(ret, "normal masgn rhs", rhsn);
 
-	if (!poped) {
-	    ADD_INSN(ret, nd_line(node), dup);
-	}
-
 	ADD_INSN2(ret, nd_line(node), expandarray,
-		  INT2FIX(llen), INT2FIX(lhs_splat));
+		  INT2FIX(llen), expand_flags);
 	ADD_SEQ(ret, lhsseq);
 
 	if (lhs_splat) {
@@ -2544,7 +2541,7 @@ compile_massign(rb_iseq_t *iseq, LINK_ANCHOR *ret, NODE *node, int poped)
 		compile_massign_lhs(iseq, ret, splatn);
 	    }
 	}
-    }
+//    }
     return COMPILE_OK;
 }
 
@@ -4595,7 +4592,7 @@ iseq_compile_each(rb_iseq_t *iseq, LINK_ANCHOR *ret, NODE * node, int poped)
       }
       case NODE_SPLAT:{
 	COMPILE(ret, "splat", node->nd_head);
-	ADD_INSN1(ret, nd_line(node), splatarray, Qfalse);
+	ADD_INSN1(ret, nd_line(node), splatarray, node->nd_spflag);
 
 	if (poped) {
 	    ADD_INSN(ret, nd_line(node), pop);
