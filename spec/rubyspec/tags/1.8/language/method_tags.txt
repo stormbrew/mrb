@@ -1,0 +1,3 @@
+fails:Calling a method with lambda as block argument is ok
+fails:Calling a method allows to pass argument, a hash without curly braces and a block argument
+fails:Calling a method with splat operator * and non-Array value attempts to coerce it to Array if the object respond_to?(:to_ary)

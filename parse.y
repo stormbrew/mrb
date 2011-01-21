@@ -690,7 +690,7 @@ static void token_info_pop(struct parser_params*, const char *token);
 %type <node> top_compstmt top_stmts top_stmt
 %type <node> bodystmt compstmt stmts stmt expr arg primary command command_call method_call
 %type <node> expr_value arg_value primary_value
-%type <node> if_tail opt_else case_body cases opt_rescue exc_list exc_var opt_ensure
+%type <node> if_tail opt_else case_body when_args cases opt_rescue exc_list exc_var opt_ensure
 %type <node> args call_args opt_call_args
 %type <node> paren_args opt_paren_args
 %type <node> command_args aref_args opt_block_arg block_arg var_ref var_lhs
@@ -2346,16 +2346,20 @@ arg_value	: arg
 		;
 
 aref_args	: none
+        | command
+            {
+                $$ = NEW_LIST($1);
+            }
 		| args trailer
 		    {
 			$$ = $1;
 		    }
-		| args ',' assocs trailer
+		| args ',' tSTAR arg_value trailer
 		    {
 		    /*%%%*/
-			$$ = arg_append($1, NEW_HASH($3));
+			$$ = arg_concat($1, $4);
 		    /*%
-			$$ = arg_add_assocs($1, $3);
+			$$ = arg_add_star($1, $4);
 		    %*/
 		    }
 		| assocs trailer
@@ -2365,6 +2369,14 @@ aref_args	: none
 		    /*%
 			$$ = arg_add_assocs(arg_new(), $1);
 		    %*/
+		    }
+		| tSTAR arg_value trailer
+		    {
+		        /*%%%*/
+                $$ = NEW_SPLAT($2, Qfalse);
+                /*%
+                $$ = arg_add_star(arg_new(), $2)
+                %*/
 		    }
 		;
 
@@ -2388,47 +2400,43 @@ opt_call_args	: none
 
 call_args	: command
 		    {
-		    /*%%%*/
-			value_expr($1);
 			$$ = NEW_LIST($1);
-		    /*%
-			$$ = arg_add(arg_new(), $1);
-		    %*/
 		    }
 		| args opt_block_arg
 		    {
-		    /*%%%*/
 			$$ = arg_blk_pass($1, $2);
-		    /*%
-			$$ = arg_add_optblock($1, $2);
-		    %*/
+		    }
+		| args ',' tSTAR arg_value opt_block_arg
+		    {
+			$$ = arg_concat($1, $4);
+			$$ = arg_blk_pass($$, $5);
 		    }
 		| assocs opt_block_arg
 		    {
-		    /*%%%*/
 			$$ = NEW_LIST(NEW_HASH($1));
 			$$ = arg_blk_pass($$, $2);
-		    /*%
-			$$ = arg_add_assocs(arg_new(), $1);
-			$$ = arg_add_optblock($$, $2);
-		    %*/
+		    }
+		| assocs ',' tSTAR arg_value opt_block_arg
+		    {
+			$$ = arg_concat(NEW_LIST(NEW_HASH($1)), $4);
+			$$ = arg_blk_pass($$, $5);
 		    }
 		| args ',' assocs opt_block_arg
 		    {
-		    /*%%%*/
-			$$ = arg_append($1, NEW_HASH($3));
+			$$ = list_append($1, NEW_HASH($3));
 			$$ = arg_blk_pass($$, $4);
-		    /*%
-			$$ = arg_add_optblock(arg_add_assocs($1, $3), $4);
-		    %*/
+		    }
+		| args ',' assocs ',' tSTAR arg opt_block_arg
+		    {
+			value_expr($6);
+			$$ = arg_concat(list_append($1, NEW_HASH($3)), $6);
+			$$ = arg_blk_pass($$, $7);
+		    }
+		| tSTAR arg_value opt_block_arg
+		    {
+			$$ = arg_blk_pass(NEW_SPLAT($2, Qfalse), $3);
 		    }
 		| block_arg
-		    /*%c%*/
-		    /*%c
-		    {
-			$$ = arg_add_block(arg_new(), $1);
-		    }
-		    %*/
 		;
 
 command_args	:  {
@@ -2475,14 +2483,6 @@ args		: arg_value
 			$$ = arg_add(arg_new(), $1);
 		    %*/
 		    }
-		| tSTAR arg_value
-		    {
-		    /*%%%*/
-			$$ = NEW_SPLAT($2, Qfalse);
-		    /*%
-			$$ = arg_add_star(arg_new(), $2);
-		    %*/
-		    }
 		| args ',' arg_value
 		    {
 		    /*%%%*/
@@ -2495,20 +2495,6 @@ args		: arg_value
 			}
 		    /*%
 			$$ = arg_add($1, $3);
-		    %*/
-		    }
-		| args ',' tSTAR arg_value
-		    {
-		    /*%%%*/
-			NODE *n1;
-			if ((nd_type($4) == NODE_ARRAY) && (n1 = splat_array($1)) != 0) {
-			    $$ = list_concat(n1, $4);
-			}
-			else {
-			    $$ = arg_concat($1, $4);
-			}
-		    /*%
-			$$ = arg_add_star($1, $4);
 		    %*/
 		    }
 		;
@@ -3692,7 +3678,7 @@ brace_block	: '{'
 		    }
 		;
 
-case_body	: keyword_when args then
+case_body	: keyword_when when_args then
 		  compstmt
 		  cases
 		    {
@@ -3701,6 +3687,17 @@ case_body	: keyword_when args then
 		    /*%
 			$$ = dispatch3(when, $2, $4, escape_Qundef($5));
 		    %*/
+		    }
+		;
+
+when_args	: args
+		| args ',' tSTAR arg_value
+		    {
+			$$ = arg_concat($1, $4);
+		    }
+		| tSTAR arg_value
+		    {
+			$$ = NEW_SPLAT($2, Qfalse);
 		    }
 		;
 
