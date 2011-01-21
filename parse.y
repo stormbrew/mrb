@@ -3094,6 +3094,7 @@ then		: term
 		    /*%c
 		    { $$ = Qnil; }
 		    %*/
+		| ':'
 		| keyword_then
 		| term keyword_then
 		    /*%c%*/
