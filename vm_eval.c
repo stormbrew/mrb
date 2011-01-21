@@ -1514,6 +1514,7 @@ static VALUE
 rb_f_catch(int argc, VALUE *argv)
 {
     VALUE tag;
+    VALUE desc;
 
     if (argc == 0) {
 	tag = rb_obj_alloc(rb_cObject);
@@ -1521,6 +1522,20 @@ rb_f_catch(int argc, VALUE *argv)
     else {
 	rb_scan_args(argc, argv, "01", &tag);
     }
+
+    switch (TYPE(tag)) {
+    case T_STRING:
+        tag = ID2SYM(rb_intern(RSTRING_PTR(tag)));
+    case T_SYMBOL:
+        break;
+    case T_FIXNUM:
+        desc = rb_inspect(tag);
+        rb_raise(rb_eArgError, "%s is not a symbol", RSTRING_PTR(desc));
+    default:
+        desc = rb_inspect(tag);
+        rb_raise(rb_eTypeError, "%s is not a symbol", RSTRING_PTR(desc));
+    }
+
     return rb_catch_obj(tag, catch_i, 0);
 }
 
