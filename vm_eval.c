@@ -1428,6 +1428,21 @@ rb_throw_obj(VALUE tag, VALUE value)
 {
     rb_thread_t *th = GET_THREAD();
     struct rb_vm_tag *tt = th->tag;
+    VALUE orig_tag = tag;
+    VALUE desc;
+
+    switch (TYPE(tag)) {
+    case T_STRING:
+        tag = ID2SYM(rb_intern(RSTRING_PTR(tag)));
+    case T_SYMBOL:
+        break;
+    case T_FIXNUM:
+        desc = rb_inspect(tag);
+        rb_raise(rb_eArgError, "%s is not a symbol", RSTRING_PTR(desc));
+    default:
+        desc = rb_inspect(tag);
+        rb_raise(rb_eTypeError, "%s is not a symbol", RSTRING_PTR(desc));
+    }
 
     while (tt) {
 	if (tt->tag == tag) {
@@ -1437,8 +1452,8 @@ rb_throw_obj(VALUE tag, VALUE value)
 	tt = tt->prev;
     }
     if (!tt) {
-	VALUE desc = rb_inspect(tag);
-	rb_raise(rb_eArgError, "uncaught throw %s", RSTRING_PTR(desc));
+	desc = rb_inspect(orig_tag);
+	rb_raise(rb_eNameError, "uncaught throw %s", RSTRING_PTR(desc));
     }
     rb_trap_restore_mask();
     th->errinfo = NEW_THROW_OBJECT(tag, 0, TAG_THROW);
