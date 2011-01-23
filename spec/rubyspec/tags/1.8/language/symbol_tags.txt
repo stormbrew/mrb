@@ -1,0 +1,2 @@
+fails:A Symbol literal does not contain null in the string
+fails:A Symbol literal must not be an empty string

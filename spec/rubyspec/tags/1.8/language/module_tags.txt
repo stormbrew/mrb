@@ -1,0 +1,1 @@
+fails:An anonymous module returns an empty string for its name
