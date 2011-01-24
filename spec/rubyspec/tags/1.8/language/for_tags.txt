@@ -1,1 +1,2 @@
 fails:The for expression splats multiple arguments together if there are fewer arguments than values
+fails:The for expression repeats the loop from the beginning with 'retry'

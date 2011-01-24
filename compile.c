@@ -223,6 +223,13 @@ PRINTF_ARGS(void ruby_debug_printf(const char*, ...), 1, 2);
            new_insn_send(iseq, (line), \
                          (VALUE)(id), (VALUE)(argc), (VALUE)(block), (VALUE)(flag)))
 
+#define ADD_RAISE(seq, line, err, str) \
+  do { \
+      ADD_INSN1((seq), (line), putobject, (err)); \
+      ADD_INSN1((seq), (line), putstring, rb_str_new2(str)); \
+      ADD_CALL((seq), (line), ID2SYM(rb_intern("raise")), INT2FIX(2)); \
+  }while(0)
+
 #define ADD_TRACE(seq, line, event) \
   do { \
       if ((event) == RUBY_EVENT_LINE && iseq->coverage && \
@@ -3369,7 +3376,7 @@ iseq_compile_each(rb_iseq_t *iseq, LINK_ANCHOR *ret, NODE * node, int poped)
 
 		ip = ip->parent_iseq;
 	    }
-	    COMPILE_ERROR((ERROR_ARGS "Invalid break"));
+        ADD_RAISE(ret, nd_line(node), rb_eLocalJumpError, "unexpected break");
 	}
 	break;
       }
@@ -3439,7 +3446,7 @@ iseq_compile_each(rb_iseq_t *iseq, LINK_ANCHOR *ret, NODE * node, int poped)
 		}
 	    }
 	    else {
-		COMPILE_ERROR((ERROR_ARGS "Invalid next"));
+	        ADD_RAISE(ret, nd_line(node), rb_eLocalJumpError, "unexpected next");
 	    }
 	}
 	break;
@@ -3507,7 +3514,7 @@ iseq_compile_each(rb_iseq_t *iseq, LINK_ANCHOR *ret, NODE * node, int poped)
 		}
 	    }
 	    else {
-		COMPILE_ERROR((ERROR_ARGS "Invalid redo"));
+	        ADD_RAISE(ret, nd_line(node), rb_eLocalJumpError, "unexpected redo");
 	    }
 	}
 	break;
@@ -3522,7 +3529,7 @@ iseq_compile_each(rb_iseq_t *iseq, LINK_ANCHOR *ret, NODE * node, int poped)
 	    }
 	}
 	else {
-	    COMPILE_ERROR((ERROR_ARGS "Invalid retry"));
+        ADD_RAISE(ret, nd_line(node), rb_eLocalJumpError, "retry outside of rescue clause");
 	}
 	break;
       }
