@@ -2357,7 +2357,7 @@ aref_args	: none
 		| args ',' tSTAR arg_value trailer
 		    {
 		    /*%%%*/
-			$$ = arg_concat($1, $4);
+			$$ = arg_concat($1, NEW_SPLAT($4, Qfalse));
 		    /*%
 			$$ = arg_add_star($1, $4);
 		    %*/
@@ -2408,7 +2408,7 @@ call_args	: command
 		    }
 		| args ',' tSTAR arg_value opt_block_arg
 		    {
-			$$ = arg_concat($1, $4);
+			$$ = arg_concat($1, NEW_SPLAT($4, Qfalse));
 			$$ = arg_blk_pass($$, $5);
 		    }
 		| assocs opt_block_arg
@@ -2418,7 +2418,7 @@ call_args	: command
 		    }
 		| assocs ',' tSTAR arg_value opt_block_arg
 		    {
-			$$ = arg_concat(NEW_LIST(NEW_HASH($1)), $4);
+			$$ = arg_concat(NEW_LIST(NEW_HASH($1)), NEW_SPLAT($4, Qfalse));
 			$$ = arg_blk_pass($$, $5);
 		    }
 		| args ',' assocs opt_block_arg
@@ -2429,7 +2429,7 @@ call_args	: command
 		| args ',' assocs ',' tSTAR arg opt_block_arg
 		    {
 			value_expr($6);
-			$$ = arg_concat(list_append($1, NEW_HASH($3)), $6);
+			$$ = arg_concat(list_append($1, NEW_HASH($3)), NEW_SPLAT($6, Qfalse));
 			$$ = arg_blk_pass($$, $7);
 		    }
 		| tSTAR arg_value opt_block_arg
