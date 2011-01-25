@@ -1447,6 +1447,9 @@ command		: operation command_args       %prec tLOWEST
 		| keyword_return call_args
 		    {
 		    /*%%%*/
+		    if (nd_type($2) == NODE_SPLAT) {
+                $2->nd_spflag = Qtrue;
+		    }
 			$$ = NEW_RETURN(ret_args($2));
 		    /*%
 			$$ = dispatch1(return, $2);
@@ -1455,6 +1458,9 @@ command		: operation command_args       %prec tLOWEST
 		| keyword_break call_args
 		    {
 		    /*%%%*/
+		    if (nd_type($2) == NODE_SPLAT) {
+                $2->nd_spflag = Qtrue;
+		    }
 			$$ = NEW_BREAK(ret_args($2));
 		    /*%
 			$$ = dispatch1(break, $2);
