@@ -1242,7 +1242,7 @@ static int
 ivar_i(ID key, VALUE val, VALUE ary)
 {
     if (rb_is_instance_id(key)) {
-	rb_ary_push(ary, ID2SYM(key));
+	rb_ary_push(ary, rb_sym_to_s(ID2SYM(key)));
     }
     return ST_CONTINUE;
 }
@@ -1726,7 +1726,7 @@ rb_mod_const_of(VALUE mod, void *data)
 static int
 list_i(ID key, ID value, VALUE ary)
 {
-    rb_ary_push(ary, ID2SYM(key));
+    rb_ary_push(ary, rb_sym_to_s(ID2SYM(key)));
     return ST_CONTINUE;
 }
 
@@ -2075,7 +2075,7 @@ static int
 cv_i(ID key, VALUE value, VALUE ary)
 {
     if (rb_is_class_id(key)) {
-	VALUE kval = ID2SYM(key);
+	VALUE kval = rb_sym_to_s(ID2SYM(key));
 	if (!rb_ary_includes(ary, kval)) {
 	    rb_ary_push(ary, kval);
 	}

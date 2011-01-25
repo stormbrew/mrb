@@ -796,7 +796,7 @@ rb_mod_ancestors(VALUE mod)
 #define VISI_CHECK(x,f) (VISI(x) == (f))
 
 static int
-ins_methods_push(ID name, long type, VALUE ary, long visi)
+ins_methods_push(ID name, long type, VALUE ary, long visi, int str_output)
 {
     if (type == -1) return ST_CONTINUE;
 
@@ -811,7 +811,11 @@ ins_methods_push(ID name, long type, VALUE ary, long visi)
 	break;
     }
     if (visi) {
-	rb_ary_push(ary, ID2SYM(name));
+        VALUE val = ID2SYM(name);
+        if (str_output) {
+            val = rb_sym_to_s(val);
+        }
+	rb_ary_push(ary, val);
     }
     return ST_CONTINUE;
 }
@@ -819,25 +823,49 @@ ins_methods_push(ID name, long type, VALUE ary, long visi)
 static int
 ins_methods_i(ID name, long type, VALUE ary)
 {
-    return ins_methods_push(name, type, ary, -1); /* everything but private */
+    return ins_methods_push(name, type, ary, -1, 0); /* everything but private */
 }
 
 static int
 ins_methods_prot_i(ID name, long type, VALUE ary)
 {
-    return ins_methods_push(name, type, ary, NOEX_PROTECTED);
+    return ins_methods_push(name, type, ary, NOEX_PROTECTED, 0);
 }
 
 static int
 ins_methods_priv_i(ID name, long type, VALUE ary)
 {
-    return ins_methods_push(name, type, ary, NOEX_PRIVATE);
+    return ins_methods_push(name, type, ary, NOEX_PRIVATE, 0);
 }
 
 static int
 ins_methods_pub_i(ID name, long type, VALUE ary)
 {
-    return ins_methods_push(name, type, ary, NOEX_PUBLIC);
+    return ins_methods_push(name, type, ary, NOEX_PUBLIC, 0);
+}
+
+static int
+ins_methods_str_i(ID name, long type, VALUE ary)
+{
+    return ins_methods_push(name, type, ary, -1, 1); /* everything but private */
+}
+
+static int
+ins_methods_prot_str_i(ID name, long type, VALUE ary)
+{
+    return ins_methods_push(name, type, ary, NOEX_PROTECTED, 1);
+}
+
+static int
+ins_methods_priv_str_i(ID name, long type, VALUE ary)
+{
+    return ins_methods_push(name, type, ary, NOEX_PRIVATE, 1);
+}
+
+static int
+ins_methods_pub_str_i(ID name, long type, VALUE ary)
+{
+    return ins_methods_push(name, type, ary, NOEX_PUBLIC, 1);
 }
 
 static int
@@ -921,7 +949,7 @@ class_instance_method_list(int argc, VALUE *argv, VALUE mod, int obj, int (*func
 VALUE
 rb_class_instance_methods(int argc, VALUE *argv, VALUE mod)
 {
-    return class_instance_method_list(argc, argv, mod, 0, ins_methods_i);
+    return class_instance_method_list(argc, argv, mod, 0, ins_methods_str_i);
 }
 
 /*
@@ -959,7 +987,7 @@ rb_class_protected_instance_methods(int argc, VALUE *argv, VALUE mod)
 VALUE
 rb_class_private_instance_methods(int argc, VALUE *argv, VALUE mod)
 {
-    return class_instance_method_list(argc, argv, mod, 0, ins_methods_priv_i);
+    return class_instance_method_list(argc, argv, mod, 0, ins_methods_priv_str_i);
 }
 
 /*
@@ -974,7 +1002,7 @@ rb_class_private_instance_methods(int argc, VALUE *argv, VALUE mod)
 VALUE
 rb_class_public_instance_methods(int argc, VALUE *argv, VALUE mod)
 {
-    return class_instance_method_list(argc, argv, mod, 0, ins_methods_pub_i);
+    return class_instance_method_list(argc, argv, mod, 0, ins_methods_pub_str_i);
 }
 
 /*
@@ -1004,7 +1032,7 @@ rb_obj_methods(int argc, VALUE *argv, VALUE obj)
 	VALUE args[1];
 
 	args[0] = Qtrue;
-	return class_instance_method_list(argc, argv, CLASS_OF(obj), 1, ins_methods_i);
+	return class_instance_method_list(argc, argv, CLASS_OF(obj), 1, ins_methods_str_i);
     }
     else {
 	VALUE recur;
@@ -1030,7 +1058,7 @@ rb_obj_methods(int argc, VALUE *argv, VALUE obj)
 VALUE
 rb_obj_protected_methods(int argc, VALUE *argv, VALUE obj)
 {
-    return class_instance_method_list(argc, argv, CLASS_OF(obj), 1, ins_methods_prot_i);
+    return class_instance_method_list(argc, argv, CLASS_OF(obj), 1, ins_methods_prot_str_i);
 }
 
 /*
@@ -1045,7 +1073,7 @@ rb_obj_protected_methods(int argc, VALUE *argv, VALUE obj)
 VALUE
 rb_obj_private_methods(int argc, VALUE *argv, VALUE obj)
 {
-    return class_instance_method_list(argc, argv, CLASS_OF(obj), 1, ins_methods_priv_i);
+    return class_instance_method_list(argc, argv, CLASS_OF(obj), 1, ins_methods_priv_str_i);
 }
 
 /*
@@ -1060,7 +1088,7 @@ rb_obj_private_methods(int argc, VALUE *argv, VALUE obj)
 VALUE
 rb_obj_public_methods(int argc, VALUE *argv, VALUE obj)
 {
-    return class_instance_method_list(argc, argv, CLASS_OF(obj), 1, ins_methods_pub_i);
+    return class_instance_method_list(argc, argv, CLASS_OF(obj), 1, ins_methods_pub_str_i);
 }
 
 /*

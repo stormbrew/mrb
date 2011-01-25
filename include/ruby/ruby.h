@@ -330,7 +330,7 @@ rb_long2int(long n) {rb_long2int_internal(n, i); return i;}
 #define SYM2ID(x) RSHIFT((unsigned long)(x),RUBY_SPECIAL_SHIFT)
 
 /* Module#methods, #singleton_methods and so on return Symbols */
-#define USE_SYMBOL_AS_METHOD_NAME 1
+#define USE_SYMBOL_AS_METHOD_NAME 0
 
 /* special constants - i.e. non-zero and non-fixnum constants */
 enum ruby_special_consts {
