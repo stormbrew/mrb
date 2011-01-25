@@ -5,136 +5,63 @@ easy object-oriented programming.  It has many features to
 process text files and to do system management tasks (as in
 Perl).  It is simple, straight-forward, and extensible.
 
+Please see README.orig for more details on the language itself.
 
-* Features of Ruby
+* What's MRB
 
-  + Simple Syntax
-  + *Normal* Object-Oriented features(ex. class, method calls)
-  + *Advanced* Object-Oriented features(ex. Mix-in, Singleton-method)
-  + Operator Overloading
-  + Exception Handling
-  + Iterators and Closures
-  + Garbage Collection
-  + Dynamic Loading of Object files(on some architecture)
-  + Highly Portable (works on many Unix-like/POSIX compatible platforms
-    as well as Windows, Mac OS X, BeOS etc.)
-    cf. http://redmine.ruby-lang.org/wiki/ruby-19/SupportedPlatforms
+MRB is a project to enable two things: Running different versions
+of the Ruby language on the same VM (derived from Ruby 1.9's VM),
+and eventually to support running multiple self-contained objectspaces
+within the same instance (MVM) that may be running different
+languages or language versions.
 
+Currently the main work is on making it act like Ruby 1.8.7. Eventually,
+the parts that had to change for this to work will be isolated and
+it will be possible to switch versions.
 
-* How to get Ruby
+So far it passes most of the common-case rubyspec language specs for Ruby 1.8.7.
 
-The Ruby distribution files can be found in the following FTP site:
+* Getting MRB
 
-  ftp://ftp.ruby-lang.org/pub/ruby/
+Currently MRB is available only from its source repository on github. You
+can clone the repository as follows:
 
-The trunk of the Ruby source tree can be checked out with the
-following command:
+ $ git clone git://github.com/stormbrew/mrb.git
 
-  $ svn co http://svn.ruby-lang.org/repos/ruby/trunk/ ruby
+* Helping
 
-There are some other branches under development.  Try the following
-command and see the list of branches:
+If you'd like to help this project, clone the repository and use mspec to
+find areas where expected behaviour is failing. Fix a spec and submit a pull request.
+Note that we're currently looking only at the language specs in rubyspec.
 
-  $ svn ls http://svn.ruby-lang.org/repos/ruby/branches/
+To run the spec suite to find errors, run:
 
+ $ mspec --format spec -g fails :language
 
-* Ruby home-page
+Please also verify that your changes do not cause any regressions by running:
 
-The URL of the Ruby home-page is:
+ $ mspec ci :language
 
-   http://www.ruby-lang.org/
+If you find 1.8.7 behaviours that are not covered in rubyspec, please
+write a spec for rubyspec and submit it as a pull request to them. We
+will continue updating our merged copy of rubyspec to find new failures.
 
+You can find rubyspec at: https://github.com/rubyspec/rubyspec
 
-* Mailing list
+* Contact
 
-There is a mailing list to talk about Ruby.
-To subscribe this list, please send the following phrase
+This is a pet project of Graham Batty: @stormbrew on twitter and
+stormbrew on Freenode. You can contact him by email at graham@stormbrew.ca.
+There is no irc channel or mailing list for this project yet.
 
-	subscribe YourFirstName YourFamilyName
-e.g.
-        subscribe Joseph Smith
+* Thanks
 
-in the mail body (not subject) to the address <ruby-talk-ctl@ruby-lang.org>.
+Thanks to the following for making this project possible one way or another:
 
-
-* How to compile and install
-
-This is what you need to do to compile and install Ruby:
-
-  1. If ./configure does not exist or is older than configure.in,
-     run autoconf to (re)generate configure.
-
-  2. Run ./configure, which will generate config.h and Makefile.
-
-     Some C compiler flags may be added by default depending on your
-     environment.  Specify optflags=.. and warnflags=.. as necessary
-     to override them.
-
-  3. Edit defines.h if you need.  Usually this step will not be needed.
-
-  4. Remove comment mark(#) before the module names from ext/Setup (or
-     add module names if not present), if you want to link modules
-     statically.
-
-     If you don't want to compile non static extension modules
-     (probably on architectures which does not allow dynamic loading),
-     remove comment mark from the line "#option nodynamic" in
-     ext/Setup.
-
-  5. Run make.
-
-  6. Optionally, run 'make test' to check whether the compiled Ruby
-     interpreter works well.  If you see the message "test succeeded",
-     your ruby works as it should (hopefully).
-
-  7. Run 'make install'
-
-     This command will create following directories and install files
-     onto them.
-
-       * ${DESTDIR}${prefix}/bin
-       * ${DESTDIR}${prefix}/include/ruby-${MAJOR}.${MINOR}.${TEENY}
-       * ${DESTDIR}${prefix}/include/ruby-${MAJOR}.${MINOR}.${TEENY}/${PLATFORM}
-       * ${DESTDIR}${prefix}/lib
-       * ${DESTDIR}${prefix}/lib/ruby
-       * ${DESTDIR}${prefix}/lib/ruby/${MAJOR}.${MINOR}.${TEENY}
-       * ${DESTDIR}${prefix}/lib/ruby/${MAJOR}.${MINOR}.${TEENY}/${PLATFORM}
-       * ${DESTDIR}${prefix}/lib/ruby/site_ruby
-       * ${DESTDIR}${prefix}/lib/ruby/site_ruby/${MAJOR}.${MINOR}.${TEENY}
-       * ${DESTDIR}${prefix}/lib/ruby/site_ruby/${MAJOR}.${MINOR}.${TEENY}/${PLATFORM}
-       * ${DESTDIR}${prefix}/lib/ruby/vendor_ruby
-       * ${DESTDIR}${prefix}/lib/ruby/vendor_ruby/${MAJOR}.${MINOR}.${TEENY}
-       * ${DESTDIR}${prefix}/lib/ruby/vendor_ruby/${MAJOR}.${MINOR}.${TEENY}/${PLATFORM}
-       * ${DESTDIR}${prefix}/lib/ruby/gems/${MAJOR}.${MINOR}.${TEENY}
-       * ${DESTDIR}${prefix}/share/man/man1
-       * ${DESTDIR}${prefix}/share/ri/${MAJOR}.${MINOR}.${TEENY}/system
-
-     If Ruby's API version is `x.y.z', the ((|${MAJOR}|)) is `x', the
-     ((|${MINOR}|)) is `y', and the ((|${TEENY}|)) is `z'.
-
-     NOTE: teeny of the API version may be different from one of
-     Ruby's program version
-
-     You may have to be a super user to install ruby.
-
-If you fail to compile ruby, please send the detailed error report with
-the error log and machine/OS type, to help others.
-
+ + Yukihiro Matsumoto for making Ruby in the first place.
+ + SASADA Koichi for making the YARV VM that is the basis of this project.
+ + Brian Ford for the RubySpec and MSpec projects.
 
 * Copying
 
 See the file COPYING.
-
-
-* The Author
-
-Feel free to send comments and bug reports to the author.  Here is the 
-author's latest mail address:
-
-  matz@netlab.jp
-
--------------------------------------------------------
-created at: Thu Aug  3 11:57:36 JST 1995
-Local variables:
-mode: indented-text
-end:
