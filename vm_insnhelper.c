@@ -915,7 +915,7 @@ vm_yield_setup_args(rb_thread_t * const th, const rb_iseq_t *iseq,
 	printf("   lambda: %s\n", lambda ? "true" : "false");
     }
 
-    if (lambda) {
+    if (lambda && !(iseq->arg_simple & 0x10)) {
 	/* call as method */
 	int opt_pc;
 	VM_CALLEE_SETUP_ARG(opt_pc, th, iseq, argc, argv, &blockptr);

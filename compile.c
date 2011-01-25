@@ -1215,7 +1215,7 @@ iseq_set_arguments(rb_iseq_t *iseq, LINK_ANCHOR *optargs, NODE *node_args)
 	}
     }
     else {
-	iseq->arg_simple = 1;
+	iseq->arg_simple = 1 | 0x10;
     }
 
     return COMPILE_OK;

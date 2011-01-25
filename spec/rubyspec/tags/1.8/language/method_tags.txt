@@ -1,2 +1,0 @@
-fails:Calling a method with lambda as block argument is ok
-fails:Calling a method allows to pass argument, a hash without curly braces and a block argument

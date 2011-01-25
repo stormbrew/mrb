@@ -3385,7 +3385,7 @@ opt_block_param	: none
 block_param_def	: '|' opt_bv_decl '|'
 		    {
 		    /*%%%*/
-			$$ = 0;
+			$$ = new_args(0, 0, 0, 0, 0);
 		    /*%
 			$$ = blockvar_new(params_new(Qnil,Qnil,Qnil,Qnil,Qnil),
                                           escape_Qundef($2));
@@ -3394,7 +3394,7 @@ block_param_def	: '|' opt_bv_decl '|'
 		| tOROP
 		    {
 		    /*%%%*/
-			$$ = 0;
+			$$ = new_args(0, 0, 0, 0, 0);
 		    /*%
 			$$ = blockvar_new(params_new(Qnil,Qnil,Qnil,Qnil,Qnil),
                                           Qnil);
