@@ -1469,6 +1469,9 @@ command		: operation command_args       %prec tLOWEST
 		| keyword_next call_args
 		    {
 		    /*%%%*/
+		    if (nd_type($2) == NODE_SPLAT) {
+                $2->nd_spflag = Qtrue;
+		    }
 			$$ = NEW_NEXT(ret_args($2));
 		    /*%
 			$$ = dispatch1(next, $2);
