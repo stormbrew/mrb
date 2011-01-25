@@ -275,12 +275,12 @@ caller_setup_args(const rb_thread_t *th, rb_control_frame_t *cfp, VALUE flag,
 	VALUE ary = *(cfp->sp - 1);
 	VALUE *ptr;
 	int i;
-	VALUE tmp = rb_check_convert_type(ary, T_ARRAY, "Array", "to_a");
+	VALUE tmp = rb_check_convert_type(ary, T_ARRAY, "Array", "to_ary");
 
 	if (NIL_P(tmp)) {
 	    /* do nothing */
-	}
-	else {
+    }
+    else {
 	    long len = RARRAY_LEN(tmp);
 	    ptr = RARRAY_PTR(tmp);
 	    cfp->sp -= 1;
@@ -808,6 +808,20 @@ vm_yield_setup_block_args(rb_thread_t *th, const rb_iseq_t * iseq,
     th->mark_stack_len = argc;
 
     /*
+     * yield 1, 2
+     *  => {|a|} => a = [1,2]
+     *  => {|a,b|} => a,b = [1,2]
+     */
+    if ((iseq->arg_simple & 0x02) && argc > 1) {
+        rb_warn("multiple values for a block parameter (%d for %d)", argc, 1);
+
+        *argv = rb_ary_new4(argc, argv);
+
+        th->mark_stack_len = argc = 1;
+        CHECK_STACK_OVERFLOW(th->cfp, argc);
+    }
+
+    /*
      * yield [1, 2]
      *  => {|a|} => a = [1, 2]
      *  => {|a, b|} => a, b = [1, 2]
@@ -924,6 +938,13 @@ vm_invoke_block(rb_thread_t *th, rb_control_frame_t *reg_cfp, rb_num_t num, rb_n
 	rb_vm_localjump_error("no block given (yield)", Qnil, 0);
     }
     iseq = block->iseq;
+
+    /* 1.8 special case: if block takes multiple arguments and there's only
+     * one argument on the caller and it's splatted, don't splat.
+     */
+    if (argc == 1 && iseq->argc + iseq->arg_post_len > 1) {
+        flag &= ~VM_CALL_ARGS_SPLAT_BIT;
+    }
 
     argc = caller_setup_args(th, GET_CFP(), flag, argc, 0, 0);
 
