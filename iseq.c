@@ -1147,6 +1147,7 @@ iseq_data_to_ary(rb_iseq_t *iseq)
     switch(iseq->type) {
       case ISEQ_TYPE_TOP:    type = sym_top;    break;
       case ISEQ_TYPE_METHOD: type = sym_method; break;
+      case ISEQ_TYPE_FOR:    type = sym_block;  break;
       case ISEQ_TYPE_BLOCK:  type = sym_block;  break;
       case ISEQ_TYPE_CLASS:  type = sym_class;  break;
       case ISEQ_TYPE_RESCUE: type = sym_rescue; break;

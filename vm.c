@@ -913,7 +913,7 @@ rb_vm_make_jump_tag_but_local_jump(int state, VALUE val)
 	result = make_localjump_error("unexpected redo", Qnil, state);
 	break;
       case TAG_RETRY:
-	result = make_localjump_error("retry outside of rescue clause", Qnil, state);
+	result = make_localjump_error("unexpected retry", Qnil, state);
 	break;
       default:
 	break;

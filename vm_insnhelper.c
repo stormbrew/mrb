@@ -1468,7 +1468,7 @@ vm_throw(rb_thread_t *th, rb_control_frame_t *reg_cfp,
 		rb_iseq_t *base_iseq = GET_ISEQ();
 
 	      search_parent:
-		if (cfp->iseq->type != ISEQ_TYPE_BLOCK) {
+		if (cfp->iseq->type != ISEQ_TYPE_BLOCK && cfp->iseq->type != ISEQ_TYPE_FOR) {
 		    if (cfp->iseq->type == ISEQ_TYPE_CLASS) {
 			cfp = RUBY_VM_PREVIOUS_CONTROL_FRAME(cfp);
 			dfp = cfp->dfp;

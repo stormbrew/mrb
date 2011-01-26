@@ -467,6 +467,7 @@ rb_iseq_compile_node(VALUE self, NODE *node)
 	iseq_set_arguments(iseq, ret, node->nd_args);
 
 	switch (iseq->type) {
+	  case ISEQ_TYPE_FOR:
 	  case ISEQ_TYPE_BLOCK: {
 	    LABEL *start = iseq->compile_data->start_label = NEW_LABEL(0);
 	    LABEL *end = iseq->compile_data->end_label = NEW_LABEL(0);
@@ -503,6 +504,7 @@ rb_iseq_compile_node(VALUE self, NODE *node)
 	  case ISEQ_TYPE_METHOD:
 	  case ISEQ_TYPE_CLASS:
 	  case ISEQ_TYPE_BLOCK:
+	  case ISEQ_TYPE_FOR:
 	  case ISEQ_TYPE_EVAL:
 	  case ISEQ_TYPE_MAIN:
 	  case ISEQ_TYPE_TOP:
@@ -1205,7 +1207,7 @@ iseq_set_arguments(rb_iseq_t *iseq, LINK_ANCHOR *optargs, NODE *node_args)
 	    iseq->arg_size = iseq->argc;
 	}
 
-	if (iseq->type == ISEQ_TYPE_BLOCK) {
+	if (iseq->type == ISEQ_TYPE_BLOCK || iseq->type == ISEQ_TYPE_FOR) {
 	    if (iseq->arg_opts == 0 && iseq->arg_post_len == 0 && iseq->arg_rest == -1) {
 		if (iseq->argc == 1 && last_comma == 0) {
 		    /* {|a|} */
@@ -2810,7 +2812,7 @@ make_name_for_block(rb_iseq_t *iseq)
 
     if (iseq->parent_iseq != 0) {
 	while (ip->local_iseq != ip) {
-	    if (ip->type == ISEQ_TYPE_BLOCK) {
+	    if (ip->type == ISEQ_TYPE_BLOCK || ip->type == ISEQ_TYPE_FOR) {
 		level++;
 	    }
 	    ip = ip->parent_iseq;
@@ -3295,7 +3297,7 @@ iseq_compile_each(rb_iseq_t *iseq, LINK_ANCHOR *ret, NODE * node, int poped)
 
 	    iseq->compile_data->current_block =
 		NEW_CHILD_ISEQVAL(node->nd_body, make_name_for_block(iseq),
-				  ISEQ_TYPE_BLOCK, nd_line(node));
+				  ISEQ_TYPE_FOR, nd_line(node));
 
 	    mid = idEach;
 	    ADD_SEND_R(ret, nd_line(node), ID2SYM(idEach), INT2FIX(0),
@@ -3315,6 +3317,7 @@ iseq_compile_each(rb_iseq_t *iseq, LINK_ANCHOR *ret, NODE * node, int poped)
 
 	iseq->compile_data->current_block = prevblock;
 
+    ADD_CATCH_ENTRY(CATCH_TYPE_RETRY, retry_label, retry_end_l, 0, retry_label);
 	ADD_CATCH_ENTRY(CATCH_TYPE_BREAK, retry_label, retry_end_l, 0, retry_end_l);
 
 	break;
@@ -3336,7 +3339,7 @@ iseq_compile_each(rb_iseq_t *iseq, LINK_ANCHOR *ret, NODE * node, int poped)
 		ADD_INSN(ret, nd_line(node), putnil);
 	    }
 	}
-	else if (iseq->type == ISEQ_TYPE_BLOCK) {
+	else if (iseq->type == ISEQ_TYPE_BLOCK || iseq->type == ISEQ_TYPE_FOR) {
 	  break_by_insn:
 	    /* escape from block */
 	    COMPILE(ret, "break val (block)", node->nd_stts);
@@ -3366,7 +3369,7 @@ iseq_compile_each(rb_iseq_t *iseq, LINK_ANCHOR *ret, NODE * node, int poped)
 		    }
 		    goto break_by_insn;
 		}
-		else if (ip->type == ISEQ_TYPE_BLOCK) {
+		else if (ip->type == ISEQ_TYPE_BLOCK || ip->type == ISEQ_TYPE_FOR) {
 		    level <<= 16;
 		    goto break_by_insn;
 		}
@@ -3428,7 +3431,7 @@ iseq_compile_each(rb_iseq_t *iseq, LINK_ANCHOR *ret, NODE * node, int poped)
 		    /* while loop */
 		    break;
 		}
-		else if (ip->type == ISEQ_TYPE_BLOCK) {
+		else if (ip->type == ISEQ_TYPE_BLOCK || ip->type == ISEQ_TYPE_FOR) {
 		    break;
 		}
 		else if (ip->type == ISEQ_TYPE_EVAL) {
@@ -3496,7 +3499,7 @@ iseq_compile_each(rb_iseq_t *iseq, LINK_ANCHOR *ret, NODE * node, int poped)
 		if (ip->compile_data->redo_label != 0) {
 		    break;
 		}
-		else if (ip->type == ISEQ_TYPE_BLOCK) {
+		else if (ip->type == ISEQ_TYPE_BLOCK || ip->type == ISEQ_TYPE_FOR) {
 		    break;
 		}
 		else if (ip->type == ISEQ_TYPE_EVAL) {
@@ -3520,7 +3523,7 @@ iseq_compile_each(rb_iseq_t *iseq, LINK_ANCHOR *ret, NODE * node, int poped)
 	break;
       }
       case NODE_RETRY:{
-	if (iseq->type == ISEQ_TYPE_RESCUE) {
+	if (iseq->type == ISEQ_TYPE_RESCUE || iseq->type == ISEQ_TYPE_FOR) {
 	    ADD_INSN(ret, nd_line(node), putnil);
 	    ADD_INSN1(ret, nd_line(node), throw, INT2FIX(0x04) /* TAG_RETRY */ );
 
@@ -5485,6 +5488,7 @@ rb_dvar_defined(ID id)
     rb_iseq_t *iseq;
     if (th->base_block && (iseq = th->base_block->iseq)) {
 	while (iseq->type == ISEQ_TYPE_BLOCK ||
+	       iseq->type == ISEQ_TYPE_FOR ||
 	       iseq->type == ISEQ_TYPE_RESCUE ||
 	       iseq->type == ISEQ_TYPE_ENSURE ||
 	       iseq->type == ISEQ_TYPE_EVAL ||

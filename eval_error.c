@@ -246,7 +246,7 @@ error_handle(int ex)
 	break;
       case TAG_RETRY:
 	error_pos();
-	warn_print(": retry outside of rescue clause\n");
+	warn_print(": unexpected retry\n");
 	break;
       case TAG_THROW:
 	/* TODO: fix me */
