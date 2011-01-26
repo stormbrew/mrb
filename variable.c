@@ -183,7 +183,11 @@ rb_mod_name(VALUE mod)
 {
     VALUE path = classname(mod);
 
-    if (!NIL_P(path)) return rb_str_dup(path);
+    if (NIL_P(path)) {
+        path = rb_str_new(0,0);
+    } else {
+        path = rb_str_dup(path);
+    }
     return path;
 }
 
