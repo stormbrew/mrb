@@ -98,4 +98,29 @@ describe "IO.popen" do
     io.should be_an_instance_of(IOSpecs::SubIO)
     io.close
   end
+
+  ruby_version_is "1.9.2" do
+    platform_is_not :windows do # not sure what commands to use on Windows
+      describe "with a leading Array parameter" do
+        it "uses the Array as command plus args for the child process" do
+          io = IO.popen(["yes", "hello"]) do |i|
+            i.read(5).should == 'hello'
+          end
+        end
+        
+        it "uses a leading Hash in the Array as additional environment variables" do
+          io = IO.popen([{'foo' => 'bar'}, 'env']) do |i|
+            i.read.should =~ /foo=bar/
+          end
+        end
+        
+        it "uses a trailing Hash in the Array for spawn-like settings" do
+          io = IO.popen(['sh', '-c', 'does_not_exist', {:err => [:child, :out]}]) do |i|
+            i.read.should =~ /command not found/
+          end
+        end
+      end
+    end
+  end
+  
 end
